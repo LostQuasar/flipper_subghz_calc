@@ -9,8 +9,9 @@ PRESET_MODULE = "Custom_preset_module: CC1101\n"
 PRESET_DATA = 'Custom_preset_data:'
 CRYSTAL_FRQUENCY = 26000000
 MODEM_CONFIG = ''
-
-
+TX_PREAMBLE = 0b111111000
+TX_ZERO = 0b1110
+TX_ONE = 0b0001
 file_output = HEADER
 
 # inp = input("Include standard frequencies? (Y/n)\n")
@@ -31,11 +32,14 @@ file_output = HEADER
 inp = input("Data rate (Baud) in Hertz?\n")
 inp = int(inp)
 if inp > 3910:
-    for chanbw_e in range(0, 16):
+    for chanbw_e in range(0, 4): # 2 bits
         chanbw_m = round((CRYSTAL_FRQUENCY * 2**(-3-chanbw_e))/(inp*2) - 4)
-        if chanbw_m < 16 and chanbw_m >= 0:
+        if chanbw_m < 4 and chanbw_m >= 0: # 2 bits
             break
-    for drate_e in range(0, 16):
+    else:
+        chanbw_m = 3
+    # MINUMUM BANDWIDTH = 58 kHz
+    for drate_e in range(0, 16): # 4 bits
         drate_m = round(((2 ** (21 - drate_e)) * inp / (CRYSTAL_FRQUENCY / 128)) - 256)
         if drate_m < 256 and drate_m >= 0:
             break
@@ -44,15 +48,11 @@ if inp > 3910:
     manchester_en = 0
 
     print(
-        "\nREGISTER 0x10\n"
-        + f"{chanbw_e:#0{1}x}"[-1:].upper()
-        + f"{chanbw_m:#0{1}x}"[-1:].upper()
-        + " "
-        + f"{drate_e:#0{4}x}"[2:].upper()
-        + "\nREGISTER 0x11\n"
-        + f"{drate_m:#0{6}x}"[2:4].upper()
-        + " "
-        + f"{drate_m:#0{6}x}"[4:8].upper()
+        "10 "
+        + f"{int(bin(chanbw_e)[2:]+bin(chanbw_m)[2:],2):#0{3}x}"[2:].upper()
+        + f"{drate_e:#0{3}x}"[2:].upper()
+        + "\n11 "
+        + f"{drate_m:#0{4}x}"[2:].upper()
     )
     
 
